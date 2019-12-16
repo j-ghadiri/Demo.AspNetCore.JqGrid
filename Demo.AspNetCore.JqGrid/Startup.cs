@@ -1,32 +1,50 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Lib.AspNetCore.Mvc.JqGrid.Core.Request;
 using Lib.AspNetCore.Mvc.JqGrid.Infrastructure.Options;
+using Microsoft.AspNetCore.Mvc.Razor;
+using Microsoft.Extensions.Hosting;
 
 namespace Demo.AspNetCore.JqGrid
 {
     public class Startup
     {
-        public void ConfigureServices(IServiceCollection services)
+         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services.AddControllersWithViews(options =>
+            {
+                //Set For Antiforgery Post Method
+                //options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+                options.AllowEmptyInputInBodyModelBinding = true;
+            }).AddJsonOptions(jsonOptions =>
+            {
+                jsonOptions.JsonSerializerOptions.IgnoreNullValues = true;
+                jsonOptions.JsonSerializerOptions.WriteIndented = true;
+            }).AddNewtonsoftJson();
+            
+            services.AddRazorPages();
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+          public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            JqGridRequest.ParametersNames = new JqGridParametersNames() { PagesCount = "npage" };
-
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseStaticFiles()
-                .UseMvc(routes =>
+            app.UseHttpsRedirection();
+            app.UseStaticFiles();
+
+            JqGridRequest.ParametersNames = new JqGridParametersNames() { PagesCount = "npage" };
+            app.UseRouting();
+            app.UseEndpoints(endpoints =>
             {
-                routes.MapRoute(name: "default", template: "{controller=JavaScript}/{action=Basics}");
+                endpoints.MapControllerRoute(
+                    name: "default",
+                    pattern: "{controller=JavaScript}/{action=Basics}/{id?}");
+                endpoints.MapRazorPages();
             });
         }
     }
